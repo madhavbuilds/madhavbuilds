@@ -1,0 +1,65 @@
+name: Profile cards
+
+on:
+  schedule:
+    - cron: "23 3 * * *"        # daily, 03:23 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - render_cards.py
+      - assets/**
+      - .github/contributions.graphql
+      - .github/workflows/profile-cards.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-cards
+  cancel-in-progress: true
+
+jobs:
+  cards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refresh contribution data
+        env:
+          # Public activity works with the default token. To count private contributions,
+          # add a classic PAT with read:user as the CONTRIB_TOKEN repository secret.
+          GH_TOKEN: ${{ secrets.CONTRIB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p data
+          gh api graphql \
+            -F login="${{ github.repository_owner }}" \
+            -f query="$(cat .github/contributions.graphql)" > data/github.json.new
+          python3 -c "import json; d = json.load(open('data/github.json.new')); assert d['data']['user']['contributionsCollection']"
+          mv data/github.json.new data/github.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        with:
+          path: .fontcache
+          key: fonts-${{ hashFiles('render_cards.py') }}
+
+      - name: Render cards
+        run: |
+          pip install --quiet fonttools pillow
+          python render_cards.py
+
+      - name: Commit cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/github.json cards README.md
+          if git diff --cached --quiet; then
+            echo "Cards unchanged."
+          else
+            git commit -m "Refresh profile cards"
+            git push
+          fi
