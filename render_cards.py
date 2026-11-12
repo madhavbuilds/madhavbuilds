@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Render the animated SVG cards for the madhavbuilds profile README.
+"""Render the SVG cards for the madhavbuilds profile README.
 
-    python render_cards.py            animated cards into cards/
+    python render_cards.py            animated cards into cards/, README block updated
     STATIC=1 python render_cards.py   final frame into preview/, plus preview/index.html
 
 Reads data/github.json (written daily by .github/workflows/profile-cards.yml).
@@ -31,96 +31,105 @@ OUT = ROOT / ("preview" if STATIC else "cards")
 DATA = ROOT / "data" / "github.json"
 README = ROOT / "README.md"
 FONT_CACHE = ROOT / ".fontcache"
+GH = "https://github.com/madhavbuilds"
 
 # --------------------------------------------------------------------------------------
 # Content. Edit freely.
 # --------------------------------------------------------------------------------------
 PROFILE = {
-    "name": "Madhav Panchal",
-    "line": "I build websites, apps, AI tools and Chrome extensions, and ship them.",
-    "status": "Open to freelance and remote work",
-    "place": "Based in Helsinki",
+    "first": "Madhav",
+    "last": "Panchal",
+    "label": "Builder · open to freelance & remote",
+    "line": "I build websites, apps, AI tools and Chrome extensions, and ship them. "
+            "Based in Helsinki.",
+    "site": "madhavpanchal.com",
     "href": "https://madhavpanchal.com/",
-    # Optional. Any square-ish JPG/PNG; it is cropped to a circle. Leave missing for no portrait.
-    "portrait": ROOT / "assets" / "portrait.jpg",
+    # Drawn as a line engraving. Any portrait on a plain light background works best.
+    "portrait": ROOT / "assets" / "Cyber Streetwear Portrait with Neon Accents (1).png",
+    # Crop box as fractions of the image (left, top, right, bottom): head and shoulders.
+    "crop": (0.165, 0.02, 0.84, 0.80),
 }
 
+# The three colour tiles. {repos} is filled in from data/github.json.
 TILES = [
-    {"slug": "website", "label": "Website", "handle": "madhavpanchal.com",
-     "href": "https://madhavpanchal.com/"},
-    {"slug": "linkedin", "label": "LinkedIn", "handle": "in/madhavpanchal",
-     "href": "https://www.linkedin.com/in/madhavpanchal/"},
-    {"slug": "email", "label": "Email", "handle": "madhavpanchal1716@gmail.com",
-     "href": "mailto:madhavpanchal1716@gmail.com"},
+    {"slug": "build", "label": "Build", "big": "{repos} repos", "colour": "blue",
+     "body": "Websites, apps, AI tools and Chrome extensions, all public on GitHub.",
+     "href": f"{GH}?tab=repositories"},
+    {"slug": "ship", "label": "Ship", "big": "3 packages", "colour": "red",
+     "body": "create-own-ai on npm, Vett on PyPI and the EvalKit dataset on Hugging Face.",
+     "href": f"{GH}/create-own-ai"},
+    {"slug": "local", "label": "Local", "big": "0 API keys", "colour": "yellow",
+     "body": "lantern and create-own-ai run on your own machine with Ollama. Nothing leaves it.",
+     "href": f"{GH}/lantern"},
 ]
 
-# Repos to feature, in order. Set to None to use your pinned repos instead.
-FEATURED = ["neurogenesis", "lantern", "create-own-ai", "EvalKit", "Vett"]
-# Card descriptions. Falls back to the GitHub description for repos not listed here.
+# "What I'm coding": repos in order, shown three to a row. None uses your pinned repos.
+FEATURED = ["neurogenesis", "lantern", "create-own-ai", "EvalKit", "Vett", "Forge"]
+# Short card descriptions (three lines max). Falls back to the GitHub description.
 DESCRIPTIONS = {
-    "neurogenesis":
-        "A neural network that starts with one neuron, grows where it gets stuck, prunes "
-        "what it doesn't use and stops growing on its own. NumPy only.",
-    "lantern":
-        "A local answer engine. Searches the web through SearXNG and answers with cited "
-        "sources from your own Ollama model, with nothing leaving your machine.",
-    "create-own-ai":
-        "One command builds a chat-with-your-files app that runs entirely on your computer. "
-        "Cited answers from PDFs, docs and code, with no API keys or cloud.",
-    "EvalKit":
-        "An open benchmark for LLMs in five Indian languages. Tests Hinglish input, real "
-        "Indian tasks, cultural knowledge and safety.",
-    "Vett":
-        "Fast codebase health checks for leaked secrets, risky APIs, complexity and TODOs, "
-        "with optional AI analysis and a Markdown report.",
-    "AI-powered-Traffic-Analysis-System":
-        "Real-time vehicle detection and tracking with YOLOv5. Estimates speeds, counts "
-        "vehicles and shows traffic flow from a top-down view.",
+    "neurogenesis": "A neural net that starts as one neuron, grows where it gets stuck and "
+                    "prunes what it doesn't use. NumPy only.",
+    "lantern": "A local answer engine. Web search through SearXNG, cited answers from your "
+               "own Ollama model.",
+    "create-own-ai": "One command builds a chat-with-your-files app that runs entirely on "
+                     "your computer.",
+    "EvalKit": "An open LLM benchmark in five Indian languages, from Hinglish input to "
+               "cultural knowledge.",
+    "Vett": "Codebase health checks for leaked secrets, risky APIs, complexity and TODOs.",
+    "Forge": "Offline vibe coding: chat, generate a website, preview it and iterate with "
+             "local AI.",
 }
-# Optional note shown in brand teal on a repo card, e.g. where it's published.
-HIGHLIGHTS = {
-    "create-own-ai": "Published on npm",
-    "EvalKit": "Dataset on Hugging Face",
-    "Vett": "Published on PyPI",
-}
+# Shown after the language on a repo card.
+HIGHLIGHTS = {"create-own-ai": "on npm", "Vett": "on PyPI", "EvalKit": "on Hugging Face"}
+
+FOOTER = [
+    ("madhavpanchal.com", "https://madhavpanchal.com/"),
+    ("linkedin", "https://www.linkedin.com/in/madhavpanchal/"),
+    ("email", "mailto:madhavpanchal1716@gmail.com"),
+]
 
 # --------------------------------------------------------------------------------------
-# Brand. Colours follow madhavpanchal.com (stone neutrals, theme colour #fafaf9) and the
-# teal you already use across the README.
+# Look
 # --------------------------------------------------------------------------------------
 C = {
-    "bg": "#fafaf9",          # stone-50, the site's theme colour
-    "ink": "#1c1917",         # stone-900
-    "body": "#57534e",        # stone-600
-    "muted": "#78716c",       # stone-500
-    "line": "#e7e5e4",        # stone-200
-    "brand": "#5DCAA5",
-    "brand_deep": "#1D9E75",
-    "brand_ink": "#0F6E56",   # brand teal dark enough for text on bg
+    "bg": "#f4f3ef",          # paper
+    "ink": "#121212",
+    "body": "#3b3a36",
+    "muted": "#7a7870",
+    "line": "#e3e1da",
+    "faint": "#cfccc3",       # the month still in progress
+    "blue": "#2e54ff",
+    "red": "#ec3a25",
+    "yellow": "#fdc626",
+    "engrave": "#2a2925",
+    "gh_dark": "#f0f6fc",     # heading text on GitHub's dark theme
+    "gh_light": "#1f2328",    # and on the light theme
 }
+HEAT = ["#e0e2ef", "#b9c4fb", "#8299ff", "#4c6aff", "#1d3bd1"]   # less -> more
 
-INTER = ("https://raw.githubusercontent.com/google/fonts/main/ofl/inter/"
-         "Inter%5Bopsz%2Cwght%5D.ttf")
+GF = "https://raw.githubusercontent.com/google/fonts/main/ofl/"
+INTER = GF + "inter/Inter%5Bopsz%2Cwght%5D.ttf"
 # role -> font file (URL or local path) and variable-axis instance.
 FONTS = {
     "r": {"src": INTER, "axes": {"wght": 400, "opsz": 14}},
     "s": {"src": INTER, "axes": {"wght": 600, "opsz": 14}},
-    "d": {"src": INTER, "axes": {"wght": 700, "opsz": 32}},
+    "g": {"src": GF + "instrumentserif/InstrumentSerif-Regular.ttf"},
+    "i": {"src": GF + "instrumentserif/InstrumentSerif-Italic.ttf"},
+    "k": {"src": GF + "jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf", "axes": {"wght": 450}},
 }
-WEIGHT = {"r": 400, "s": 600, "d": 700}
-FALLBACK = 'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif'
+WEIGHT = {"r": 400, "s": 600, "g": 400, "i": 400, "k": 400}
+ITALIC = {"i"}
+SANS = 'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif'
+FALLBACK = {"g": 'Georgia,"Times New Roman",serif', "i": 'Georgia,"Times New Roman",serif',
+            "k": 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'}
 
 W = 840          # full-width card viewBox width
-PAD = 32
-RADIUS = 16
+PAD = 36
+RADIUS = 14
+TW = 276         # third-width card (tiles, repos)
 
 # Start time (seconds) of each card, so the README plays top to bottom.
-T_HERO = 0.0
-T_TILES = 0.55   # + 0.1 per tile
-T_MONTHLY = 0.95
-T_REPOS = 1.55   # + 0.18 per repo
-T_REPO_STEP = 0.18
-
+T_HERO, T_HEAT, T_MONTHLY, T_TILES, T_HEADING, T_REPOS = 0.0, 0.5, 0.9, 1.3, 1.6, 1.7
 
 # --------------------------------------------------------------------------------------
 # Fonts: download, instance, measure (with GPOS kerning), subset to WOFF.
@@ -270,6 +279,7 @@ def fit(s, role, size, max_w, min_size=10):
     return size
 
 
+
 # --------------------------------------------------------------------------------------
 # Card builder
 # --------------------------------------------------------------------------------------
@@ -278,15 +288,15 @@ CSS_MOTION = """
 @keyframes fade{from{opacity:0}}
 @keyframes grow{from{transform:scaleY(0)}}
 @keyframes pop{from{opacity:0;transform:scale(.3)}}
-@keyframes draw{from{stroke-dashoffset:1}}
 @keyframes nudge{from{opacity:0;transform:translate(-6px,6px)}}
+@keyframes wipe{from{transform:scaleY(1)}}
 .rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
 .fade{animation:fade .6s ease-out both}
 .grow{transform-box:fill-box;transform-origin:50% 100%;animation:grow .75s cubic-bezier(.3,.8,.2,1) both}
 .pop{transform-box:fill-box;transform-origin:50% 50%;animation:pop .45s cubic-bezier(.3,1.5,.5,1) both}
-.draw{stroke-dasharray:1 1;animation:draw 1.2s cubic-bezier(.6,0,.2,1) both}
 .nudge{animation:nudge .5s cubic-bezier(.2,.7,.2,1) both}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}.smil{display:none}}
+.wipe{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0);animation:wipe 1.6s cubic-bezier(.5,0,.3,1) both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
 """
 
 
@@ -295,8 +305,10 @@ def esc(s):
 
 
 class Card:
-    def __init__(self, w, h, title, t0=0.0):
+    def __init__(self, w, h, title, t0=0.0, bg=None, stroke=None):
         self.w, self.h, self.title, self.t0 = w, h, title, t0
+        self.bg = C["bg"] if bg is None else bg
+        self.stroke = C["line"] if stroke is None else stroke
         self.parts, self.chars = [], {}
 
     def add(self, raw):
@@ -307,14 +319,6 @@ class Card:
         if STATIC or not kind:
             return ""
         return f' class="{kind}" style="animation-delay:{self.t0 + at:.2f}s"'
-
-    def smil(self, raw):
-        """SMIL extras are decorative only: hidden under reduced motion, left out when STATIC."""
-        if not STATIC:
-            self.add(raw)
-
-    def begin(self, at):
-        return f"{self.t0 + at:.2f}s"
 
     def _use(self, role, s):
         self.chars.setdefault(role, set()).update(s)
@@ -338,23 +342,38 @@ class Card:
         self.add(f'<g{self.anim(kind, at)}><text x="{x:.1f}" y="{y:.1f}"{a}>'
                  + "".join(spans) + "</text></g>")
 
+    def label(self, x, y, s, fill, anchor=None, kind="fade", at=0.0):
+        """Small spaced-out monospace caps."""
+        self.text(x, y, s.upper(), "k", 10.5, fill, anchor=anchor, ls=1.3, kind=kind, at=at)
+
     def frame(self):
+        if not self.bg:
+            return ""
+        st = f' stroke="{self.stroke}"' if self.stroke else ""
         return (f'<rect x=".5" y=".5" width="{self.w - 1}" height="{self.h - 1}" '
-                f'rx="{RADIUS}" fill="{C["bg"]}" stroke="{C["line"]}"/>')
+                f'rx="{RADIUS}" fill="{self.bg}"{st}/>')
 
     def svg(self):
-        faces = []
+        css = []
         for role, chars in sorted(self.chars.items()):
-            faces.append(f'@font-face{{font-family:"mp-{role}";font-weight:{WEIGHT[role]};'
-                         f'src:url(data:font/woff;base64,{face(role).woff_b64(chars | {" "})}) '
-                         f'format("woff")}}')
-            faces.append(f'.{role}{{font-family:"mp-{role}",{FALLBACK};'
-                         f'font-weight:{WEIGHT[role]}}}')
-        css = "\n".join(faces) + ("" if STATIC else CSS_MOTION)
+            css.append(f'@font-face{{font-family:"mp-{role}";font-weight:{WEIGHT[role]};'
+                       f'src:url(data:font/woff;base64,{face(role).woff_b64(chars | {" "})}) '
+                       f'format("woff")}}')
+            style = "font-style:italic;" if role in ITALIC else ""
+            css.append(f'.{role}{{font-family:"mp-{role}",{FALLBACK.get(role, SANS)};'
+                       f'font-weight:{WEIGHT[role]};{style}}}')
+        css = "\n".join(css) + ("" if STATIC else CSS_MOTION)
         return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.w} {self.h}" '
                 f'width="{self.w}" height="{self.h}" role="img" aria-label="{esc(self.title)}">'
                 f"<title>{esc(self.title)}</title><style>{css}</style>"
                 f"{self.frame()}{''.join(self.parts)}</svg>")
+
+
+def arrow(card, x, y, colour, at):
+    """A small north-east arrow whose tip is at (x, y)."""
+    card.add(f'<g{card.anim("nudge", at)}><path d="M{x - 9} {y + 9} L{x} {y} M{x - 6.5} {y} '
+             f'H{x} V{y + 6.5}" fill="none" stroke="{colour}" stroke-width="1.6" '
+             f'stroke-linecap="round" stroke-linejoin="round"/></g>')
 
 
 # --------------------------------------------------------------------------------------
@@ -368,7 +387,8 @@ def load_data():
               for d in w["contributionDays"]] for w in cal["weeks"]]
     days = [d for w in weeks for d in w]
     pinned = [n for n in user.get("pinnedItems", {}).get("nodes", []) if n]
-    repos = {n["name"]: n for n in user.get("repositories", {}).get("nodes", []) if n}
+    public = [n for n in user.get("repositories", {}).get("nodes", []) if n]
+    repos = {n["name"]: n for n in public}
     repos.update({n["name"]: n for n in pinned})
     if FEATURED is None:
         featured = pinned
@@ -378,7 +398,7 @@ def load_data():
         if missing:
             print(f"warning: not found in data/github.json: {', '.join(missing)}")
     return {"weeks": weeks, "days": days, "total": cal["totalContributions"],
-            "featured": featured, "login": user.get("login", "")}
+            "featured": featured, "public": len(public), "login": user.get("login", "")}
 
 
 def stats(days):
@@ -395,14 +415,8 @@ def stats(days):
         run = run + 1 if c else 0
         longest = max(longest, run)
     busiest = max(days, key=lambda d: (d[1], d[0])) if days else (None, 0)
-    return {"current": current, "longest": longest,
+    return {"current": current, "longest": longest, "days": len(counts),
             "active": sum(1 for c in counts if c), "busiest": busiest}
-
-
-def mix(a, b, t):
-    pa = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
-    pb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(x + (y - x) * t):02x}" for x, y in zip(pb, pa))
 
 
 def fmt_date(d, year=False):
@@ -414,90 +428,163 @@ def plural(n, word):
 
 
 # --------------------------------------------------------------------------------------
-# Cards
+# Portrait: a line engraving. Each scan line gets thicker where the photo is darker.
 # --------------------------------------------------------------------------------------
-def portrait_b64(path):
+def engraving(path, crop, x0, y0, bw, bh, gap=3.2, step=1.4):
     if not path or not Path(path).exists():
         return None
     try:
-        from PIL import Image
+        from PIL import Image, ImageFilter, ImageOps
     except ImportError:
-        print("warning: install pillow to embed the portrait")
+        print("warning: install pillow to draw the portrait")
         return None
     im = Image.open(path).convert("RGB")
-    s = min(im.size)
-    im = im.crop(((im.width - s) // 2, (im.height - s) // 2,
-                  (im.width + s) // 2, (im.height + s) // 2)).resize((360, 360), Image.LANCZOS)
-    buf = io.BytesIO()
-    im.save(buf, "JPEG", quality=84, optimize=True)
-    return base64.b64encode(buf.getvalue()).decode()
+    l, t, r, b = crop
+    im = im.crop((int(l * im.width), int(t * im.height), int(r * im.width), int(b * im.height)))
+    grey = ImageOps.autocontrast(im.convert("L"), cutoff=1)
+    # Light outlines inside the dark clothing, so lapels and folds survive.
+    edges = grey.filter(ImageFilter.GaussianBlur(1.5)).filter(ImageFilter.FIND_EDGES)
+    cols, rows = int(bw / step), int(bh / gap)
+    g = grey.resize((cols, rows), Image.LANCZOS).load()
+    e = edges.resize((cols, rows), Image.LANCZOS).load()
+
+    max_w, levels = gap * 0.8, 7
+    paths = {}
+    for j in range(rows):
+        y = y0 + gap * (j + 0.5)
+        fy = j / rows
+        cur, start = 0, 0
+        for i in range(cols + 1):
+            if i < cols:
+                L = g[i, j]
+                dark = min(1.0, max(0.0, (222 - L) / 190)) ** 0.9
+                dark = max(0.0, dark - min(0.45, e[i, j] / 110))   # carve edges back out
+                # Oval vignette: full ink around the face, fading out towards the corners.
+                dx, dy = (i / cols - 0.5) / 0.5, (fy - 0.4) / 0.62
+                r = (dx * dx + dy * dy) ** 0.5
+                fade = 1.0 if r < 0.72 else max(0.0, 1 - (r - 0.72) / 0.32) ** 1.3
+                lvl = round(dark * fade * levels)
+            else:
+                lvl = 0
+            if lvl != cur:
+                if cur:
+                    paths.setdefault(cur, []).append(
+                        f"M{x0 + start * step:.1f} {y:.1f}h{(i - start) * step:.1f}")
+                cur, start = lvl, i
+    out = []
+    for lvl in sorted(paths):
+        out.append(f'<path d="{"".join(paths[lvl])}" fill="none" stroke="{C["engrave"]}" '
+                   f'stroke-width="{max_w * lvl / levels:.2f}"/>')
+    return "".join(out)
 
 
+# --------------------------------------------------------------------------------------
+# Cards
+# --------------------------------------------------------------------------------------
 def card_hero():
     p = PROFILE
-    H = 236
-    card = Card(W, H, f"{p['name']}. {p['line']}", T_HERO)
-    img = portrait_b64(p.get("portrait"))
-    r = 82
-    cx, cy = W - PAD - 6 - r, H / 2
-    text_w = (cx - r - 40 - PAD) if img else (W - 2 * PAD)
-    x = PAD + 4
+    H = 384
+    card = Card(W, H, f"{p['first']} {p['last']}. {p['line']}", T_HERO)
+    px, py, pw, ph = 500, 22, 312, H - 44
+    art = engraving(p.get("portrait"), p.get("crop", (0, 0, 1, 1)), px, py, pw, ph)
+    text_w = (px - PAD - 20) if art else (W - 2 * PAD)
+    x = PAD
+
+    if art:
+        card.add(f'<g{card.anim("fade", 0.1)}>{art}</g>')
+        # A paper-coloured sheet that slides off the portrait, top to bottom.
+        if not STATIC:
+            card.add(f'<rect x="{px - 2}" y="{py - 2}" width="{pw + 4}" height="{ph + 4}" '
+                     f'fill="{C["bg"]}"{card.anim("wipe", 0.15)}/>')
+
+    card.add(f'<rect x="{x}" y="50" width="7" height="7" fill="{C["blue"]}"'
+             f'{card.anim("pop", 0)}/>')
+    card.label(x + 16, 57.5, p["label"], C["muted"], at=0.05)
 
     # Name, set letter by letter so it can rise in sequence.
-    size, ls = 58, -1.7
-    size = fit(p["name"], "d", size, text_w)
-    xs = face("d").offsets(p["name"], size, ls)
-    card._use("d", p["name"])
-    for i, (ch, dx) in enumerate(zip(p["name"], xs)):
-        if ch == " ":
-            continue
-        card.add(f'<g{card.anim("rise", 0.05 + i * 0.035)}><text x="{x + dx:.1f}" y="104" '
-                 f'class="d" font-size="{size:g}" fill="{C["ink"]}">{esc(ch)}</text></g>')
+    k = 0
+    for row, (word, role) in enumerate(((p["first"], "g"), (p["last"], "i"))):
+        size = 112
+        while size > 40 and face(role).width(word, size, -1.5) > text_w:
+            size -= 2
+        xs = face(role).offsets(word, size, -1.5)
+        card._use(role, word)
+        y = 162 + row * 92
+        for ch, dx in zip(word, xs):
+            card.add(f'<g{card.anim("rise", 0.1 + k * 0.035)}><text x="{x + dx:.1f}" y="{y}" '
+                     f'class="{role}" font-size="{size}" fill="{C["ink"]}">{esc(ch)}</text></g>')
+            k += 1
 
     line = clean(p["line"])
-    lsize = fit(line, "r", 19, text_w)
-    card.text(x, 142, line, "r", lsize, C["body"], kind="rise", at=0.55)
+    for n, ln in enumerate(wrap(line, "r", 16.5, text_w)[:2]):
+        card.text(x, 302 + n * 25, ln, "r", 16.5, C["body"], kind="rise", at=0.6 + n * 0.05)
 
-    # Availability, with a dot that ripples a few times.
-    dot_x, dot_y = x + 5, 186
-    card.add(f'<g{card.anim("fade", 0.75)}><circle cx="{dot_x}" cy="{dot_y}" r="5" '
-             f'fill="{C["brand_deep"]}"/></g>')
-    card.smil(f'<circle class="smil" cx="{dot_x}" cy="{dot_y}" r="5" fill="none" '
-              f'stroke="{C["brand_deep"]}" stroke-width="1.5" opacity="0">'
-              f'<animate attributeName="r" values="5;15" dur="1.8s" begin="{card.begin(1.0)}" '
-              f'repeatCount="3"/><animate attributeName="opacity" values=".8;0" dur="1.8s" '
-              f'begin="{card.begin(1.0)}" repeatCount="3"/></circle>')
-    card.runs(x + 18, dot_y + 5.5, [
-        card.run(p["status"] + ". ", "s", 15, C["ink"]),
-        card.run(p["place"] + ".", "r", 15, C["muted"]),
-    ], kind="rise", at=0.75)
-
-    if img:
-        card.add(f'<defs><clipPath id="pc"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath></defs>'
-                 f'<g{card.anim("fade", 0.3)}><image href="data:image/jpeg;base64,{img}" '
-                 f'x="{cx - r}" y="{cy - r}" width="{2 * r}" height="{2 * r}" '
-                 f'clip-path="url(#pc)" preserveAspectRatio="xMidYMid slice"/></g>')
-        card.add(f'<circle cx="{cx}" cy="{cy}" r="{r + 7}" fill="none" stroke="{C["brand"]}" '
-                 f'stroke-width="2" stroke-linecap="round" pathLength="1" '
-                 f'transform="rotate(-90 {cx} {cy})"{card.anim("draw", 0.3)}/>')
+    card.text(x, 352, p["site"], "k", 12, C["ink"], kind="fade", at=0.8)
+    sw = face("k").width(p["site"], 12)
+    card.add(f'<line x1="{x}" x2="{x + sw:.1f}" y1="356.5" y2="356.5" stroke="{C["ink"]}" '
+             f'stroke-width=".8"{card.anim("fade", 0.8)}/>')
+    arrow(card, x + sw + 16, 343, C["blue"], 0.9)
     return card
 
 
-def card_tile(tile, i):
-    TW, TH = 280, 112
-    card = Card(TW, TH, f"{tile['label']}: {tile['handle']}", T_TILES + 0.1 * i)
-    card.text(24, 50, tile["label"], "s", 22, C["ink"], kind="rise", at=0.0)
-    hsize = fit(tile["handle"], "r", 14, TW - 48)
-    card.text(24, 84, tile["handle"], "r", hsize, C["muted"], kind="rise", at=0.08)
-    ax, ay = TW - 24, 24   # external-link arrow, top right
-    card.add(f'<g{card.anim("nudge", 0.3)}><path d="M{ax - 11} {ay + 11} L{ax} {ay} M{ax - 8} {ay} '
-             f'H{ax} V{ay + 8}" fill="none" stroke="{C["brand_deep"]}" stroke-width="2" '
-             f'stroke-linecap="round" stroke-linejoin="round"/></g>')
+def card_heat(data):
+    weeks = data["weeks"]
+    gap = 3
+    step = (W - 2 * PAD + gap) / len(weeks)
+    cell = step - gap
+    top = 104
+    bottom = top + 7 * step - gap
+    H = int(bottom + 52)
+    card = Card(W, H, f"Contribution graph: {plural(data['total'], 'contribution')} "
+                      f"in the last year, refreshed daily", T_HEAT)
+    card.runs(PAD, 70, [card.run("Every day, ", "g", 36, C["ink"], ls=-0.4),
+                        card.run("in blue", "i", 36, C["blue"], ls=-0.4)], kind="rise", at=0)
+    card.label(W - PAD, 66, "Refreshed daily", C["muted"], anchor="end", at=0.1)
+
+    nonzero = sorted(c for _, c in data["days"] if c)
+
+    def q(p):
+        return nonzero[min(len(nonzero) - 1, int(p * len(nonzero)))] if nonzero else 0
+    cuts = [q(.25), q(.5), q(.75)]
+
+    def level(c):
+        return 0 if not c else 1 + sum(c > t for t in cuts)
+
+    for wi, week in enumerate(weeks):
+        for d, c in week:
+            row = (d.weekday() + 1) % 7      # Sunday first, like GitHub
+            x, y = PAD + wi * step, top + row * step
+            card.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell:.1f}" height="{cell:.1f}" '
+                     f'rx="2" fill="{HEAT[level(c)]}"'
+                     f'{card.anim("pop", 0.15 + wi * 0.014 + row * 0.02)}><title>'
+                     f'{esc(plural(c, "contribution"))} on {fmt_date(d, True)}</title></rect>')
+
+    ly = bottom + 26
+    lx = W - PAD
+    card.text(lx, ly, "more", "k", 10, C["muted"], anchor="end", kind="fade", at=0.9)
+    lx -= face("k").width("more", 10) + 6 + len(HEAT) * (cell + 2) - 2
+    for n, col in enumerate(HEAT):
+        card.add(f'<rect x="{lx + n * (cell + 2):.1f}" y="{ly - cell + 1:.1f}" width="{cell:.1f}" '
+                 f'height="{cell:.1f}" rx="2" fill="{col}"{card.anim("fade", 0.9)}/>')
+    card.text(lx - 6, ly, "less", "k", 10, C["muted"], anchor="end", kind="fade", at=0.9)
+    legend_x = lx - 6 - face("k").width("less", 10) - 16
+
+    # Month labels under the grid, at the first full week of each month.
+    prev, last_wi = None, -9
+    for wi, week in enumerate(weeks):
+        first = week[0][0]
+        x = PAD + wi * step
+        name = first.strftime("%b")
+        if first.month != prev and wi - last_wi >= 3 and (prev is not None or first.day <= 7) \
+                and x + face("k").width(name, 10) < legend_x:
+            card.text(x, ly, name, "k", 10, C["muted"], kind="fade", at=0.3 + wi * 0.014)
+            last_wi = wi
+        prev = first.month
     return card
 
 
 def card_monthly(data):
-    days, H = data["days"], 324
+    days, H = data["days"], 348
     st = stats(days)
     last = days[-1][0]
     months, y, m = [], last.year, last.month
@@ -509,186 +596,107 @@ def card_monthly(data):
         if (d.year, d.month) in sums:
             sums[(d.year, d.month)] += c
     total = sum(sums.values())
-    cur_name = last.strftime("%B")
+    bd, bc = st["busiest"]
 
-    card = Card(W, H, f"{total} contributions in the last 12 months. Current streak "
-                      f"{st['current']} days, {st['active']} active days, busiest day "
-                      f"{fmt_date(st['busiest'][0], True)} with {st['busiest'][1]}.", T_MONTHLY)
-    card.text(PAD, 54, "Contributions per month", "s", 17, C["ink"], kind="rise", at=0)
-    card.text(PAD, 78, f"{total:,} in the last 12 months, {cur_name} still counting",
-              "r", 14, C["muted"], kind="rise", at=0.06)
+    card = Card(W, H, f"{total:,} contributions in the last 12 months. Current streak "
+                      f"{st['current']} days, {st['active']} of {st['days']} days with a "
+                      f"contribution, busiest day {fmt_date(bd, True)} with {bc}.", T_MONTHLY)
+    card.label(PAD, 62, "The last 12 months on GitHub", C["muted"], at=0)
+    card.runs(PAD, 116, [card.run(f"{total:,}", "g", 54, C["ink"], ls=-0.8),
+                         card.run(" contributions", "i", 54, C["ink"], ls=-0.8)],
+              kind="rise", at=0.05)
 
-    # Bars
-    x0, x1, base, top = PAD, 556, 270, 128
+    # Bars: ink, the best month in blue, the month in progress pale.
+    x0, x1, base, top = PAD, 524, 292, 168
     slot = (x1 - x0) / 12
-    bw = 26
+    bw = slot * 0.74
     peak = max(sums.values()) or 1
-    card.add(f'<line x1="{x0}" x2="{x1}" y1="{base + .5}" y2="{base + .5}" stroke="{C["line"]}"/>')
     for i, key in enumerate(months):
         v = sums[key]
         h = max(2.0, (base - top) * v / peak) if v else 0
         cx = x0 + slot * i + slot / 2
-        is_cur = i == len(months) - 1
-        fill = mix(C["brand"], C["bg"], 0.45) if is_cur else (
-            C["brand_deep"] if v == peak else C["brand"])
-        at = 0.2 + i * 0.05
+        is_cur, is_peak = i == len(months) - 1, v == peak and v
+        fill = C["faint"] if is_cur else (C["blue"] if is_peak else C["ink"])
+        at = 0.25 + i * 0.05
         if h:
-            card.add(f'<rect x="{cx - bw / 2:.1f}" y="{base - h:.1f}" width="{bw}" height="{h:.1f}" '
-                     f'rx="3" fill="{fill}"{card.anim("grow", at)}/>')
-        card.text(cx, base - h - 8, f"{v:,}", "s" if v == peak else "r", 12,
-                  C["ink"] if v == peak else C["muted"], anchor="middle", kind="fade", at=at + 0.45)
+            card.add(f'<rect x="{cx - bw / 2:.1f}" y="{base - h:.1f}" width="{bw:.1f}" '
+                     f'height="{h:.1f}" rx="1.5" fill="{fill}"{card.anim("grow", at)}>'
+                     f'<title>{esc(plural(v, "contribution"))}</title></rect>')
+        if is_peak:
+            card.text(cx, base - h - 9, f"{v:,}", "k", 11, C["blue"], anchor="middle",
+                      kind="fade", at=at + 0.5)
         mname = dt.date(key[0], key[1], 1).strftime("%b")
-        card.text(cx, base + 20, mname, "r", 12, C["muted"], anchor="middle", kind="fade", at=at)
-        if i == 0 or key[1] == 1:
-            card.text(cx, base + 36, str(key[0]), "r", 11, mix(C["muted"], C["bg"], 0.7),
-                      anchor="middle", kind="fade", at=at)
+        card.text(cx, base + 22, mname, "k", 10, C["muted"], anchor="middle", kind="fade", at=at)
 
     # Stats column
-    sx = 604
-    card.add(f'<line x1="{sx - 20.5}" x2="{sx - 20.5}" y1="104" y2="{base + 36}" '
-             f'stroke="{C["line"]}"/>')
-    streak_label = "Current streak" if st["current"] >= st["longest"] else \
-        f"Current streak, longest {st['longest']}"
-    bd, bc = st["busiest"]
+    sx, sw = 572, W - PAD - 572
+    longest = ("and the longest" if st["current"] >= st["longest"]
+               else f"longest {st['longest']}")
     rows = [
-        (streak_label, f"{st['current']}", " day" if st["current"] == 1 else " days"),
-        ("Active days in the last year", f"{st['active']:,}", ""),
-        ("Busiest day", f"{bc:,}", f" on {fmt_date(bd)}" if bd else ""),
+        ([(f"{st['current']}", "g", C["ink"]),
+          (" day" if st["current"] == 1 else " days", "i", C["ink"])],
+         f"current streak, {longest}"),
+        ([(f"{st['active']}", "g", C["ink"]), (f" / {st['days']}", "g", C["muted"])],
+         "days with a contribution"),
+        ([(f"{bc:,}", "g", C["ink"])], f"on the busiest day, {fmt_date(bd, True)}" if bd else ""),
     ]
-    for j, (label, big, small) in enumerate(rows):
-        y = 120 + j * 68
-        card.text(sx, y, label, "r", 13, C["muted"], kind="rise", at=0.5 + j * 0.1)
-        spans = [card.run(big, "d", 30, C["ink"], ls=-0.6)]
-        if small:
-            spans.append(card.run(small, "r", 15, C["body"]))
-        card.runs(sx, y + 34, spans, kind="rise", at=0.55 + j * 0.1)
+    for j, (big, caption) in enumerate(rows):
+        y = 92 + j * 84
+        card.runs(sx, y, [card.run(s, role, 40, col, ls=-0.6) for s, role, col in big],
+                  kind="rise", at=0.5 + j * 0.1)
+        card.text(sx, y + 24, caption, "r", 12.5, C["muted"], kind="rise", at=0.55 + j * 0.1)
+        if j < len(rows) - 1:
+            card.add(f'<line x1="{sx}" x2="{sx + sw}" y1="{y + 47.5}" y2="{y + 47.5}" '
+                     f'stroke="{C["line"]}"{card.anim("fade", 0.6 + j * 0.1)}/>')
     return card
 
 
-def star_path(cx, cy, R, r):
-    import math
-    pts = []
-    for k in range(10):
-        a = -math.pi / 2 + k * math.pi / 5
-        rad = R if k % 2 == 0 else r
-        pts.append(f"{cx + rad * math.cos(a):.2f},{cy + rad * math.sin(a):.2f}")
-    return "M" + " L".join(pts) + " Z"
+def card_tile(tile, i, data):
+    TH = 184
+    colour = C[tile["colour"]]
+    fg = C["ink"] if tile["colour"] == "yellow" else "#ffffff"
+    soft = "#3b3209" if tile["colour"] == "yellow" else "#ffffffd9"
+    big = tile["big"].format(repos=data["public"])
+    card = Card(TW, TH, f"{tile['label']}: {big}. {tile['body']}", T_TILES + 0.1 * i,
+                bg=colour, stroke="")
+    card.label(22, 38, tile["label"], soft, at=0)
+    arrow(card, TW - 22, 29, fg, 0.3)
+    size = 44
+    while size > 26 and face("i").width(big, size, -0.6) > TW - 44:
+        size -= 1
+    card.text(22, 104, big, "i", size, fg, ls=-0.6, kind="rise", at=0.05)
+    for n, ln in enumerate(wrap(clean(tile["body"]), "r", 12.5, TW - 44)[:3]):
+        card.text(22, 134 + n * 17.5, ln, "r", 12.5, fg, kind="rise", at=0.12 + n * 0.04)
+    return card
+
+
+def card_heading(start, italic, fill, t0):
+    card = Card(W, 64, start + italic, t0, bg="", stroke="")
+    card.runs(2, 46, [card.run(start, "g", 34, fill, ls=-0.4),
+                      card.run(italic, "i", 34, fill, ls=-0.4)], kind="rise", at=0)
+    return card
+
+
+DOTS = ["blue", "red", "yellow"]
 
 
 def card_repo(repo, i):
+    TH = 172
     name = repo["name"]
     desc = clean(DESCRIPTIONS.get(name) or repo.get("description") or "")
-    lines = wrap(desc, "r", 15, 620)[:3] if desc else []
-    first = 82
-    meta_y = (first + 24 * (len(lines) - 1) if lines else 50) + 38
-    H = int(meta_y + 26)
-    card = Card(W, H, f"{name}. {desc}", T_REPOS + T_REPO_STEP * i)
-
-    nsize = fit(name, "s", 20, W - 2 * PAD)
-    card.text(PAD, 50, name, "s", nsize, C["ink"], kind="rise", at=0)
-    for k, ln in enumerate(lines):
-        card.text(PAD, first + 24 * k, ln, "r", 15, C["body"], kind="rise", at=0.06 + 0.04 * k)
-
-    x, at = PAD, 0.2
-    lang = repo.get("primaryLanguage")
-    if lang:
-        card.add(f'<g{card.anim("pop", at)}><circle cx="{x + 5}" cy="{meta_y - 4.5}" r="5" '
-                 f'fill="{lang.get("color") or C["muted"]}"/></g>')
-        card.text(x + 16, meta_y, lang["name"], "r", 13, C["body"], kind="fade", at=at)
-        x += 16 + face("r").width(lang["name"], 13) + 22
-    for count, word, icon in ((repo.get("stargazerCount", 0), "star", "star"),
-                              (repo.get("forkCount", 0), "fork", "fork")):
-        if not count:
-            continue
-        if icon == "star":
-            shape = (f'<path d="{star_path(x + 6, meta_y - 4.5, 6.2, 2.7)}" '
-                     f'fill="{C["muted"]}"/>')
-        else:
-            gx, gy = x + 6, meta_y - 4.5
-            dots = "".join(f'<circle cx="{a:.1f}" cy="{b:.1f}" r="1.9"/>'
-                           for a, b in ((gx - 3.6, gy - 4.6), (gx + 3.6, gy - 4.6), (gx, gy + 4.6)))
-            shape = (f'<g fill="none" stroke="{C["muted"]}" stroke-width="1.4">{dots}'
-                     f'<path d="M{gx - 3.6} {gy - 2.7} V{gy - 1.4} Q{gx - 3.6} {gy} {gx - 2} {gy} '
-                     f'H{gx + 2} Q{gx + 3.6} {gy} {gx + 3.6} {gy - 1.4} V{gy - 2.7} M{gx} {gy} '
-                     f'V{gy + 2.7}"/></g>')
-        card.add(f'<g{card.anim("pop", at + 0.05)}>{shape}</g>')
-        label = plural(count, word)
-        card.text(x + 17, meta_y, label, "r", 13, C["body"], kind="fade", at=at + 0.05)
-        x += 17 + face("r").width(label, 13) + 22
-    note = HIGHLIGHTS.get(name)
-    if note:
-        card.text(x, meta_y, note, "s", 13, C["brand_ink"], kind="fade", at=at + 0.1)
-    if repo.get("pushedAt"):
-        d = dt.datetime.fromisoformat(repo["pushedAt"].replace("Z", "+00:00")).date()
-        card.text(W - PAD, meta_y, f"Updated {fmt_date(d, True)}", "r", 13, C["muted"],
-                  anchor="end", kind="fade", at=at + 0.1)
-    return card
-
-
-def card_graph(data, t0):
-    weeks, days = data["weeks"], data["days"]
-    gap = 3
-    step = (W - 2 * PAD + gap) / len(weeks)
-    cell = step - gap
-    top = 100
-    H = int(top + 7 * step + 28)
-    total = data["total"]
-    card = Card(W, H, f"{total:,} contributions in the last year", t0)
-    card.text(PAD, 54, f"{plural(total, 'contribution')} in the last year", "s", 17, C["ink"],
+    card = Card(TW, TH, f"{name}. {desc}", T_REPOS + 0.08 * i)
+    card.add(f'<rect x="20" y="31" width="7" height="7" fill="{C[DOTS[i % 3]]}"'
+             f'{card.anim("pop", 0)}/>')
+    card.text(36, 39.5, name, "s", min(16, fit(name, "s", 16, TW - 56)), C["ink"],
               kind="rise", at=0)
+    for n, ln in enumerate(wrap(desc, "r", 12.5, TW - 40)[:4]):
+        card.text(20, 72 + n * 18, ln, "r", 12.5, C["body"], kind="rise", at=0.06 + n * 0.04)
 
-    nonzero = sorted(c for _, c in days if c)
-
-    def q(p):
-        return nonzero[min(len(nonzero) - 1, int(p * len(nonzero)))] if nonzero else 0
-    cuts = [q(.25), q(.5), q(.75)]
-    levels = [C["line"], mix(C["brand"], C["bg"], 0.35), mix(C["brand"], C["bg"], 0.7),
-              C["brand"], C["brand_deep"]]
-
-    def level(c):
-        if not c:
-            return 0
-        return 1 + sum(c > t for t in cuts)
-
-    # Legend, right-aligned with the title
-    lx = W - PAD
-    more_w = face("r").width("More", 12)
-    card.text(lx, 52, "More", "r", 12, C["muted"], anchor="end", kind="fade", at=0.1)
-    lx -= more_w + 8 + 5 * (cell + 3) - 3
-    for k, col in enumerate(levels):
-        card.add(f'<rect x="{lx + k * (cell + 3):.1f}" y="{52 - cell + 1:.1f}" width="{cell:.1f}" '
-                 f'height="{cell:.1f}" rx="2.5" fill="{col}"{card.anim("fade", 0.1)}/>')
-    card.text(lx - 8, 52, "Less", "r", 12, C["muted"], anchor="end", kind="fade", at=0.1)
-
-    # Month labels
-    prev_month, last_label = None, -9
-    for wi, week in enumerate(weeks):
-        mth = week[0][0].month
-        if mth != prev_month and wi - last_label >= 3 and wi < len(weeks) - 2:
-            if prev_month is not None or week[0][0].day <= 7:
-                card.text(PAD + wi * step, top - 10, week[0][0].strftime("%b"), "r", 12,
-                          C["muted"], kind="fade", at=0.15 + wi * 0.016)
-                last_label = wi
-        prev_month = mth
-
-    # Cells, revealed in a diagonal wave
-    for wi, week in enumerate(weeks):
-        for d, c in week:
-            row = (d.weekday() + 1) % 7      # Sunday first, like GitHub
-            x, y = PAD + wi * step, top + row * step
-            card.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell:.1f}" height="{cell:.1f}" '
-                     f'rx="2.5" fill="{levels[level(c)]}"'
-                     f'{card.anim("pop", 0.2 + wi * 0.016 + row * 0.025)}><title>'
-                     f'{esc(plural(c, "contribution"))} on {fmt_date(d, True)}</title></rect>')
-
-    # Mark today once the wave has passed
-    d, c = days[-1]
-    wi, row = len(weeks) - 1, (d.weekday() + 1) % 7
-    x, y = PAD + wi * step - 2, top + row * step - 2
-    card.smil(f'<rect class="smil" x="{x:.1f}" y="{y:.1f}" width="{cell + 4:.1f}" '
-              f'height="{cell + 4:.1f}" rx="4" fill="none" stroke="{C["ink"]}" stroke-width="1.5" '
-              f'opacity="0"><animate attributeName="opacity" values="0;1;0" dur="1.4s" '
-              f'begin="{card.begin(1.4)}" repeatCount="2"/></rect>')
+    lang = (repo.get("primaryLanguage") or {}).get("name")
+    stars = repo.get("stargazerCount", 0)
+    bits = [b for b in (lang, f"★ {stars}" if stars and face("k").has("★") else
+                        (plural(stars, "star") if stars else None), HIGHLIGHTS.get(name)) if b]
+    card.text(20, TH - 22, "  ·  ".join(bits), "k", 10.5, C["muted"], kind="fade", at=0.25)
     return card
 
 
@@ -699,44 +707,60 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
-def readme_block(cards_dir, repos, data):
+def readme_block(d, repos, data):
     p = PROFILE
+    a = esc
     lines = [
-        f'<a href="{p["href"]}"><img src="{cards_dir}/hero.svg" width="100%" '
-        f'alt="{esc(p["name"])}. {esc(p["line"])}"></a>',
+        f'<a href="{p["href"]}"><img src="{d}/hero.svg" width="100%" '
+        f'alt="{a(p["first"])} {a(p["last"])}. {a(p["line"])}"></a>',
+        "",
+        f'<img src="{d}/heatmap.svg" width="100%" alt="Contribution graph for the last year">',
+        "",
+        f'<img src="{d}/contributions.svg" width="100%" '
+        f'alt="Contributions per month, with streak, active days and busiest day">',
         "",
         '<p align="center">',
     ]
     for t in TILES:
-        lines.append(f'<a href="{t["href"]}"><img src="{cards_dir}/tile-{t["slug"]}.svg" '
-                     f'width="32.5%" alt="{esc(t["label"])}: {esc(t["handle"])}"></a>')
-    lines += ["</p>", "",
-              f'<img src="{cards_dir}/contributions-monthly.svg" width="100%" '
-              f'alt="Contributions per month, with streak, active days and busiest day">', ""]
-    for r in repos:
-        lines += [f'<a href="{r["url"]}"><img src="{cards_dir}/repo-{slug(r["name"])}.svg" '
-                  f'width="100%" alt="{esc(r["name"])}"></a>', ""]
-    lines += [f'<img src="{cards_dir}/contribution-graph.svg" width="100%" '
-                  f'alt="Contribution graph for the last year">']
+        big = t["big"].format(repos=data["public"])
+        lines.append(f'<a href="{t["href"]}"><img src="{d}/tile-{t["slug"]}.svg" width="32.8%" '
+                     f'alt="{a(t["label"])}: {a(big)}. {a(t["body"])}"></a>')
+    lines += [
+        "</p>", "",
+        "<picture>",
+        f'<source media="(prefers-color-scheme: dark)" srcset="{d}/heading-coding-dark.svg">',
+        f'<img src="{d}/heading-coding-light.svg" width="100%" alt="What I\'m coding">',
+        "</picture>", "",
+    ]
+    for r0 in range(0, len(repos), 3):
+        lines.append('<p align="center">')
+        for r in repos[r0:r0 + 3]:
+            lines.append(f'<a href="{r["url"]}"><img src="{d}/repo-{slug(r["name"])}.svg" '
+                         f'width="32.8%" alt="{a(r["name"])}"></a>')
+        lines += ["</p>", ""]
+    lines.append('<p align="center">' + " / ".join(
+        f'<a href="{href}">{a(text)}</a>' for text, href in FOOTER) + "</p>")
     return "\n".join(lines)
 
 
 def main():
     if not DATA.exists():
-        sys.exit(f"missing {DATA.relative_to(ROOT)}; see the README in this folder for the gh command")
+        sys.exit(f"missing {DATA.relative_to(ROOT)}; run the Profile cards workflow first")
     data = load_data()
     OUT.mkdir(exist_ok=True)
     for old in OUT.glob("*.svg"):
         old.unlink()
 
     repos = data["featured"]
-    cards = {"hero": card_hero()}
+    cards = {"hero": card_hero(), "heatmap": card_heat(data),
+             "contributions": card_monthly(data)}
     for i, t in enumerate(TILES):
-        cards[f"tile-{t['slug']}"] = card_tile(t, i)
-    cards["contributions-monthly"] = card_monthly(data)
+        cards[f"tile-{t['slug']}"] = card_tile(t, i, data)
+    for mode in ("dark", "light"):
+        cards[f"heading-coding-{mode}"] = card_heading("What I'm ", "coding",
+                                                      C[f"gh_{mode}"], T_HEADING)
     for i, r in enumerate(repos):
         cards[f"repo-{slug(r['name'])}"] = card_repo(r, i)
-    cards["contribution-graph"] = card_graph(data, T_REPOS + T_REPO_STEP * len(repos) + 0.15)
 
     for name, card in cards.items():
         svg = card.svg()
@@ -745,13 +769,15 @@ def main():
 
     block = readme_block(OUT.name, repos, data)
     if STATIC:
+        page = block.replace(f'src="{OUT.name}/', 'src="').replace(f'srcset="{OUT.name}/',
+                                                                   'srcset="')
         (OUT / "index.html").write_text(
             "<!doctype html><meta charset=utf-8><title>Profile preview</title>"
-            "<style>body{margin:0;background:#fff;font:14px system-ui}"
-            "main{max-width:830px;margin:32px auto;padding:0 16px}"
-            "img{vertical-align:top}p{margin:12px 0;text-align:center}"
-            "main>a,main>img{display:block;margin:12px 0}</style><main>"
-            + block.replace(f'src="{OUT.name}/', 'src="') + "</main>", encoding="utf-8")
+            "<style>body{margin:0;background:#0d1117;color:#f0f6fc;font:14px system-ui}"
+            "main{max-width:830px;margin:32px auto;padding:0 16px}a{color:#4493f8}"
+            "img{vertical-align:top}p{margin:16px 0}main>a,main>img,picture img"
+            "{display:block;margin:16px 0}</style><main>" + page + "</main>",
+            encoding="utf-8")
         print(f"preview: {OUT / 'index.html'}  (final frame, no animation)")
     elif README.exists():
         text = README.read_text(encoding="utf-8")
