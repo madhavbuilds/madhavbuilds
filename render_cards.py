@@ -64,9 +64,11 @@ TILES = [
 ]
 
 # "What I'm coding": repos in order, shown three to a row. None uses your pinned repos.
-FEATURED = ["neurogenesis", "lantern", "create-own-ai", "EvalKit", "Vett", "Forge"]
+FEATURED = ["gitsong", "neurogenesis", "lantern", "create-own-ai", "EvalKit", "Vett"]
 # Short card descriptions (three lines max). Falls back to the GitHub description.
 DESCRIPTIONS = {
+    "gitsong": "Your GitHub contribution graph, played as a song. One week per beat, one "
+               "note per day. Pure Python.",
     "neurogenesis": "A neural net that starts as one neuron, grows where it gets stuck and "
                     "prunes what it doesn't use. NumPy only.",
     "lantern": "A local answer engine. Web search through SearXNG, cited answers from your "
@@ -80,7 +82,7 @@ DESCRIPTIONS = {
              "local AI.",
 }
 # Shown after the language on a repo card.
-HIGHLIGHTS = {"create-own-ai": "on npm", "Vett": "on PyPI", "EvalKit": "on Hugging Face"}
+HIGHLIGHTS = {"gitsong": "live demo", "create-own-ai": "on npm", "Vett": "on PyPI", "EvalKit": "on Hugging Face"}
 
 FOOTER = [
     ("madhavpanchal.com", "https://madhavpanchal.com/"),
