@@ -6,7 +6,7 @@
 <img src="cards/contributions.svg" width="100%" alt="Contributions per month, with streak, active days and busiest day">
 
 <p align="center">
-<a href="https://github.com/madhavbuilds?tab=repositories"><img src="cards/tile-build.svg" width="32.8%" alt="Build: 32 repos. Websites, apps, AI tools and Chrome extensions, all public on GitHub."></a>
+<a href="https://github.com/madhavbuilds?tab=repositories"><img src="cards/tile-build.svg" width="32.8%" alt="Build: 33 repos. Websites, apps, AI tools and Chrome extensions, all public on GitHub."></a>
 <a href="https://github.com/madhavbuilds/create-own-ai"><img src="cards/tile-ship.svg" width="32.8%" alt="Ship: 3 packages. create-own-ai on npm, Vett on PyPI and the EvalKit dataset on Hugging Face."></a>
 <a href="https://github.com/madhavbuilds/lantern"><img src="cards/tile-local.svg" width="32.8%" alt="Local: 0 API keys. lantern and create-own-ai run on your own machine with Ollama. Nothing leaves it."></a>
 </p>
